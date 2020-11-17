@@ -503,20 +503,6 @@ class CompilationError(NotImplementedError):
 
 
 if __name__ == '__main__':
-    #     print(jsify('''
-    # store.a = "a"
-    # load
-    # del something_something['k']
-    #     ''')[0].compile([]))
-    #     print(jsify('''
-    # print(f"test")
-    # print(f"test2 {2+2=}")
-    # ''')[0].compile([]))
-    # print(jsify(''.join(open(__file__, 'r').readlines())))
-    #     print(jsify('''
-    # for i in range(15):
-    #     print(i)
-    # ''')[0].compile([]))
     import argparse
 
     p = argparse.ArgumentParser()
