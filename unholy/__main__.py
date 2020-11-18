@@ -28,13 +28,37 @@ PY_TO_JS_NAMES: Dict[str, str] = {
     'range': 'unholy_js.py__range'
 }
 PY_TO_JS_OPERATORS = {
-    ast.Mult: lambda l, r: f'{_jsify_node(l)}*{_jsify_node(r)}',
-    ast.Div: lambda l, r: f'{_jsify_node(l)}/{_jsify_node(r)}',
-    ast.Sub: lambda l, r: f'{_jsify_node(l)}-{_jsify_node(r)}',
-    ast.Add: lambda l, r: f'{_jsify_node(l)}+{_jsify_node(r)}',
-    ast.Pow: lambda l, r: f'{_jsify_node(l)}**{_jsify_node(r)}',
-    ast.USub: lambda l, r: f'-{_jsify_node(l)}',
-    ast.In: lambda l, r: f'({_jsify_node(l)}).contains({_jsify_node(r)})'
+    ast.Mult: lambda l, r: JSExpression([
+        *_jsify_node(l),
+        '*',
+        *_jsify_node(r),
+    ]),
+    ast.Div: lambda l, r: JSExpression([
+        *_jsify_node(l),
+        '/',
+        *_jsify_node(r),
+    ]),
+    ast.Add: lambda l, r: JSExpression([
+        *_jsify_node(l),
+        '+',
+        *_jsify_node(r),
+    ]),
+    ast.Pow: lambda l, r: JSExpression([
+        *_jsify_node(l),
+        '**',
+        *_jsify_node(r),
+    ]),
+    ast.USub: lambda l, r: JSExpression([
+        '-',
+        *_jsify_node(l),
+    ]),
+    ast.In: lambda l, r: JSExpression([
+        '(',
+        *_jsify_node(r),
+        ').contains(',
+        *_jsify_node(l),
+        ')'
+    ]),
 }
 
 
@@ -119,17 +143,17 @@ def _jsify_containers(node) -> List[Compilable]:
         ])]
 
 
-def _jsify_operators(node) -> str:
+def _jsify_operators(node) -> List[JSExpression]:
     if isinstance(node, ast.BinOp):
         node_type = type(node.op)
         try:
-            return PY_TO_JS_OPERATORS[node_type](node.left, node.right)
+            return [PY_TO_JS_OPERATORS[node_type](node.left, node.right)]
         except KeyError as e:
             raise CompilationError(f'no known way to compile operator {node_type}') from e
     elif isinstance(node, ast.UnaryOp):
         node_type = type(node.op)
         try:
-            return PY_TO_JS_OPERATORS[node_type](node.operand, None)
+            return [PY_TO_JS_OPERATORS[node_type](node.operand, None)]
         except KeyError as e:
             raise CompilationError(f'no known way to compile unary operator {node_type}') from e
     elif isinstance(node, ast.Compare):
@@ -145,11 +169,17 @@ def _jsify_operators(node) -> str:
             try:
                 out.append(PY_TO_JS_OPERATORS[oper](left, right))
             except KeyError as e:
-                raise CompilationError(f'no known way to compile unary operator {oper}') from e
+                raise CompilationError(f'no known way to compile comparison operator {oper}') from e
 
             left = right
 
-        return '&&'.join(out)
+        new_out = []
+        for i in out:
+            new_out.append(JSExpression(['&&']))
+            new_out.append(i)
+
+        new_out.pop(0)  # remove leading '&&'
+        return JSExpression(new_out)
 
 
 def _jsify_functions(node) -> List[Compilable]:
@@ -432,7 +462,7 @@ def _parse_range_arguments(call: ast.Call):
     elif len(call.args) == 2:
         return _jsify_node(call.args[0]), _jsify_node(call.args[1]), [JSExpression(['1'])]
     elif len(call.args) == 3:
-        return _jsify_node(call.args[0]), _jsify_node(call.args[1]), _jsify_node(call.args[1])
+        return _jsify_node(call.args[0]), _jsify_node(call.args[1]), _jsify_node(call.args[2])
     else:
         raise CompilationError('Bad arguments for range() function in for loop.')
 
@@ -454,7 +484,7 @@ def _jsify_for_loop(node: ast.For):
                     *start,
                     '; (',
                     *step,
-                    ' > 0 ? (',
+                    ' >= 0 ? (',
                     *var_name,
                     ' < ',
                     *end,
