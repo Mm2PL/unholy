@@ -109,6 +109,10 @@ class JSBlock(Compilable):
         return f'<JSBlock: {repr(self.statements[0]) if self.statements else "no statements"}>'
 
 
+class CompilationError(NotImplementedError):
+    pass
+
+
 if __name__ == '__main__':
     # test = JSBlock([
     #     JSStatement('(iterable) =>', has_semicolon=False),

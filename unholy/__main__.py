@@ -6,7 +6,7 @@ import typing
 from typing import Dict, List
 
 from typechecker import ensure_typecheck
-from .classes import JSBlock, Compilable, JSStatement, JSExpression
+from .classes import JSBlock, Compilable, JSStatement, JSExpression, CompilationError
 from .constants import START_COMMENT
 
 
@@ -527,11 +527,6 @@ def _variable_name(name: str) -> str:
     for i in ' []-,.{}':
         name = name.replace(i, '_')
     return name
-
-
-class CompilationError(NotImplementedError):
-    pass
-
 
 if __name__ == '__main__':
     import argparse
