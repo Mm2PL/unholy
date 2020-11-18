@@ -7,6 +7,7 @@ from typing import Dict, List
 
 from typechecker import ensure_typecheck
 from .classes import JSBlock, Compilable, JSStatement, JSExpression
+from .constants import START_COMMENT
 
 
 @ensure_typecheck
@@ -538,7 +539,7 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('file', metavar='FILE', type=open)
     p.add_argument('-o', '--output', metavar='FILE', type=str, default='-', dest='output')
-    p.add_argument('-q', '--stfu', action='store_true', dest='quiet')
+    p.add_argument('-q', '--quiet', '--stfu', default=0, action='count', dest='quiet')
     program_arguments = p.parse_args()
 
     if program_arguments.file:
@@ -549,5 +550,8 @@ if __name__ == '__main__':
             print(result[0].compile([]))
         else:
             with open(program_arguments.output, 'w') as f:
+                f.write(START_COMMENT)
                 f.write(result[0].compile([]))
-            print(f'Written result to {program_arguments.output}')
+
+            if program_arguments.quiet < 2:
+                print(f'Written result to {program_arguments.output}')
