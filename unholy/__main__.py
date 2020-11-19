@@ -76,7 +76,6 @@ def _make_function_call(fname: str, *args: str):
 
 def _jsify_containers(node) -> List[Compilable]:
     if isinstance(node, ast.Tuple):
-        # return f'#[{", ".join(_jsify_node(i) for i in node.elts)}]'
         elts = []
         for i in node.elts:
             v = _jsify_node(i)
@@ -91,7 +90,6 @@ def _jsify_containers(node) -> List[Compilable]:
             ']'
         ])]
     elif isinstance(node, ast.List):
-        # return f'[{", ".join(_jsify_node(i) for i in node.elts)}]'
         elts = []
         for i in node.elts:
             v = _jsify_node(i)
@@ -106,7 +104,6 @@ def _jsify_containers(node) -> List[Compilable]:
             ']'
         ])]
     elif isinstance(node, ast.Set):
-        # return f'new Set([{", ".join(_jsify_node(i) for i in node.elts)}])'
         elts = []
         for i in node.elts:
             v = _jsify_node(i)
@@ -188,13 +185,10 @@ def _jsify_functions(node) -> List[Compilable]:
         # args, body
         arguments: typing.List[ast.arg] = node.args.args
         arg_list = ', '.join([i.arg for i in arguments])
-        # body = ['return ' + ]
         if node.args.kwarg:
             arg_list += f', options'
-            # body.insert(0, 'const kwargs = options')  # nice js body will insert semicolons
         if node.args.vararg:
             arg_list += f', ...{node.args.vararg.arg}'
-        # return f'({arg_list}) => {_jsify_node(node.body)}'
         return [
             JSExpression([
                 JSExpression([f'({arg_list}) =>']),
@@ -203,7 +197,6 @@ def _jsify_functions(node) -> List[Compilable]:
         ]
     elif isinstance(node, ast.FunctionDef):
         name = node.name
-        # decorators = '('.join([_jsify_node(i) for i in node.decorator_list])
         decorators = []
         for i in node.decorator_list:
             decorators.extend(_jsify_node(i))
@@ -261,8 +254,6 @@ def _jsify_functions(node) -> List[Compilable]:
         ]
     elif isinstance(node, ast.Return):
         # 'value',
-        # return f'return {_jsify_node(node.value)}'
-
         # noinspection PyTypeChecker
         v: JSStatement = _jsify_node(node.value)[0]
         v.force_concat = True
@@ -317,7 +308,6 @@ def _jsify_node(node) -> List[Compilable]:
         ])]
     elif isinstance(node, ast.Attribute):
         # value, attr, ctx
-        # return f'{_jsify_node(node.value)}.{node.attr}'
         return [JSExpression([
             *_jsify_node(node.value),
             '.',
@@ -335,13 +325,11 @@ def _jsify_node(node) -> List[Compilable]:
         for i in t:
             targets.extend(_jsify_node(i))
         if len(targets) == 1:
-            # return f'{targets[0]} = {_jsify_node(node.value)}'
             return [JSExpression([
                 targets[0], ' = ',
                 *_jsify_node(node.value)
             ])]
         else:
-            # return f'[ {", ".join(targets)} ] = {_jsify_node(node.value)}'
             output = ['[']
             for i in targets:
                 output.append(i)
@@ -359,7 +347,6 @@ def _jsify_node(node) -> List[Compilable]:
         if isinstance(node.slice, ast.Slice):
             raise CompilationError('Slicing is not yet implemented')
         elif isinstance(node.slice, ast.Index):
-            # return f'{v}[{_jsify_node(node.slice.value)}]'
             return [JSExpression([
                 *v,
                 *_jsify_node(node.slice.value)
@@ -374,10 +361,6 @@ def _jsify_node(node) -> List[Compilable]:
             *_jsify_node(node.value)
         ])]
     elif isinstance(node, ast.ImportFrom):
-        # requires.append(
-        #     f'const {{ {alias.asname or alias.name} }} = require('
-        #     f'{json.dumps("not_python/" + node.module + ".js")});'
-        # )
         requires = []
         names = node.names
         for alias in names:
@@ -414,7 +397,6 @@ def _jsify_node(node) -> List[Compilable]:
                     ['${', *_jsify_node(i), '}']
                 ))
             else:
-                logging.debug(f'ayyy lmao {i=}')
                 if isinstance(i, ast.Constant):
                     values.append(JSExpression([i.value]))
                 else:
@@ -440,10 +422,6 @@ def _jsify_node(node) -> List[Compilable]:
             return value
     elif isinstance(node, ast.If):
         # test, body, orelse,
-        # print(node.test)
-        # print(node.body)
-        # print(node.orelse)
-        # exit()
         body = []
         for i in node.body:
             body.extend(_jsify_node(i))
