@@ -177,7 +177,7 @@ def _jsify_operators(node) -> List[JSExpression]:
             new_out.append(i)
 
         new_out.pop(0)  # remove leading '&&'
-        return JSExpression(new_out)
+        return [JSExpression(new_out)]
 
 
 def _jsify_functions(node) -> List[Compilable]:
