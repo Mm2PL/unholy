@@ -195,7 +195,7 @@ def _jsify_functions(node) -> List[Compilable]:
                 JSBlock(_jsify_node(node.body))
             ])
         ]
-    elif isinstance(node, ast.FunctionDef):
+    elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
         name = node.name
         decorators = []
         for i in node.decorator_list:
@@ -211,45 +211,28 @@ def _jsify_functions(node) -> List[Compilable]:
             arg_list += f', options'
         if node.args.vararg:
             arg_list += f', ...{node.args.vararg.arg}'
-        # return [f'let {name} = {decorators}(function {name}({arg_list}) {{',
-        #         body, f'}}){")" * len(node.decorator_list)};']
-
         body = []
         for i in node.body:
             body.extend(_jsify_node(i))
-
+        if isinstance(node, ast.FunctionDef):
+            keyword = 'function'
+        elif isinstance(node, ast.AsyncFunctionDef):
+            keyword = 'async function'
+        else:
+            raise CompilationError('Expected a FunctionDev or AsyncFunctionDef. Something broke.')
         return [
             # JSStatement(f'let {name} = {decorators}(function {name}({arg_list})', has_semicolon=False),
             JSStatement('let ', [
                 name,
                 ' = ',
                 *decorators,
-                '(function ',
+                f'({keyword}',
                 name,
                 '(',
                 arg_list,
                 ')'
             ], has_semicolon=False),
             JSBlock(body),
-            JSStatement(')' * (len(node.decorator_list) + 1), force_concat=True)
-        ]
-    elif isinstance(node, ast.AsyncFunctionDef):
-        name = node.name
-        decorators = '('.join([_jsify_node(i) for i in node.decorator_list])
-        body = [_jsify_node(i) for i in node.body]
-        arguments: typing.List[ast.arg] = node.args.args
-        arg_list = ', '.join([i.arg for i in arguments])
-        if node.args.kwarg:
-            arg_list += f', options'
-            if node.args.kwarg.arg != 'options':
-                body.insert(0, f'const {node.args.kwarg.arg} = options')  # nice js body will insert semicolons
-        if node.args.vararg:
-            arg_list += f', ...{node.args.vararg.arg}'
-        # return [f'let {name} = {decorators}(async function {name}({arg_list}) {{', body,
-        #         f'}}){")" * len(node.decorator_list)};']
-        return [
-            JSStatement(f'let {name} = {decorators}(async function {name}({arg_list})', has_semicolon=False),
-            JSBlock(_jsify_node(node.body)),
             JSStatement(')' * (len(node.decorator_list) + 1), force_concat=True)
         ]
     elif isinstance(node, ast.Return):
