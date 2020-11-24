@@ -1,7 +1,7 @@
 import ast
 import typing
 
-from . import functions, general, containers, fstrings, control, operators
+from . import functions, general, containers, fstrings, control, operators, imports
 
 
 def lookup_node_translator(node):
@@ -23,6 +23,7 @@ translator_map: typing.Dict[type, typing.Callable] = {
     ast.Name: general.jsify_name,
     ast.Attribute: general.jsify_attribute,
     ast.Assign: general.jsify_assign,
+    ast.AnnAssign: general.jsify_assign,
     ast.Delete: general.jsify_delete,
     ast.Subscript: general.jsify_subscript,
     ast.Await: general.jsify_await,
@@ -45,4 +46,8 @@ translator_map: typing.Dict[type, typing.Callable] = {
     ast.BinOp: operators.jsify_binop,
     ast.UnaryOp: operators.jsify_unary,
     ast.Compare: operators.jsify_comparison,
+
+    # .imports
+    ast.Import: imports.jsify_import,
+    ast.ImportFrom: imports.jsify_import_from,
 }
